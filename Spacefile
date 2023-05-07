@@ -1,0 +1,10 @@
+# Spacefile Docs: https://go.deta.dev/docs/spacefile/v0
+v: 0
+micros:
+  - name: DetaFlow
+    src: ./
+    engine: python3.9
+    primary: true
+    dev: flask --app main.py run --debug --reload --port 4201
+    presets:
+      api_keys: true

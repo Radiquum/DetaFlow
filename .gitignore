@@ -1,0 +1,6 @@
+.space
+.space_env
+.env
+.vscode
+venv
+__pycache__
