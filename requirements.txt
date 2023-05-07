@@ -2,3 +2,4 @@ deta
 flask
 python-dotenv
 pillow
+asgiref

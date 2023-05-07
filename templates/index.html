@@ -5,51 +5,41 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DetaFlow</title>
-    <!-- <link rel="stylesheet" href="static/css/index.css"> -->
-    <link rel="stylesheet" href="https://unpkg.com/@blaze/css/dist/blaze/blaze.css">
-    <link rel="stylesheet" href="static/css/custom.css">
+
+    <link href="static/css/output.css" rel="stylesheet">
+
 </head>
-<body class="o-container o-container--large\@medium">
-
-{% for i in items %}
-
-    {% if i.get("isfile") == "false" %}
-        <div class="flow-item">
-            <p class="time"> {{i.get('date')}}</p>
-            <p class="message"> {{i.get('message')}}</p>
-
-            <form action="/delete" method="POST">
-                <button class="button-delete" name="delete" value={{ i.get('key') }} type="submit">DELETE</button>
-            </form>
-        </div>
-    {% else %}
-        <div class="flow-item o-container o-container--small">
-            <p class="time"> {{i.get('date')}}</p>
-            
-            {% if i.get('mimetype') in ['image/jpeg', 'image/png']  %}
-                <a href="get/{{ i.get('key') }}"><img src="get/{{ i.get('key') }}/thumbnail" alt=""></a>
-            {% else %}
-                <a class="message" href="get/{{ i.get('key') }}"> {{i.get('message')}}</a>
-            {% endif %}
-            
-            <form action="/delete_file" method="POST">
-                <button class="button-delete" name="delete" value={{ i.get('key') }} type="submit">DELETE</button>
-            </form>
-        </div>
-    {% endif %}
-
-{% endfor %}
-
-<div class="input-box">
-<form action="/new" method = "POST">
-    <input type = "text" name = "message" />
-    <input type = "submit" value = "Submit" />
-</form>
-<form method=post action="/upload" enctype=multipart/form-data>
-    <input type=file name=file>
-    <input type=submit value=Upload>
-  </form>
-</div>
+<body>
     
+    <div class="max-sm:mt-[150px] mt-24 m-4 flex flex-col items-center justify-center">
+        {% for i in items %}
+        <div class="relative border border-slate-600 p-2 m-2 rounded-md w-64">
+            <p class="text-left text-xs h-6">{{i.get('date')}}</p>
+        {% if i.get("isfile") == "false" %}
+            <p>{{i.get('message')}}</p>
+        {% else %}
+            {% if i.get('mimetype') in ['image/jpeg', 'image/png', 'image/webp']  %}
+                <a href="get/{{ i.get('key') }}"><img src="get/thumbnail/{{ i.get('key') }}" alt=""></a>
+            {% else %}
+                <a href="get/{{ i.get('key') }}"> {{i.get('message')}}</a>
+            {% endif %}
+        {% endif %}
+            <form class="absolute -right-3 -top-3" action="/delete" method="POST">
+                <button class="text-xl opacity-80 hover:text-2xl hover:opacity-100 transition-all" name="delete" value={{ i.get('key') }} type="submit">❌</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="fixed p-2 top-0 text-center w-full backdrop-blur-lg bg-zinc-500 bg-opacity-50">
+        <form action="/new" method="POST">
+            <input type="text" name="message" class="w-80 rounded-xl border mb-1" />
+            <input type="submit" value="➡️" />
+        </form>
+        <form action="/upload" method="POST" enctype=multipart/form-data>
+            <input type=file name=file class="w-80">
+            <input type=submit value="📤">
+        </form>
+    </div>
 </body>
 </html>

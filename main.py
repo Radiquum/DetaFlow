@@ -7,6 +7,9 @@ import uuid
 from PIL import Image
 import ssl
 import io
+import asyncio
+from collections import OrderedDict
+from datetime import datetime
 
 load_dotenv()
 
@@ -23,8 +26,10 @@ def index():
     while res.last:
         res = db.fetch(last=res.last)
         all_items += res.items
+        
+    ordered_data = sorted(all_items, key = lambda x:datetime.strptime(x['date'], "%d %B %Y @ %H:%M:%S"), reverse=True)
 
-    return render_template('index.html', items=all_items)
+    return render_template('index.html', items=ordered_data)
 
 @app.route('/new', methods = ['POST'])
 def new(message=None):
@@ -42,11 +47,11 @@ def upload(file=None):
     dr.put(name, file.stream.read(), content_type=file.mimetype)
     db.put({"key": name, "date": datetime.now().strftime("%d %B %Y @ %H:%M:%S"), "message": file.filename, "isfile": "true", "mimetype": file.mimetype})
     
-    if file.mimetype in ['image/jpeg', 'image/png']:
+    if file.mimetype in ['image/jpeg', 'image/png', 'image/webp']:
         
         img = Image.open(file.stream)
-        SIZE = (90, 90)
-        img.thumbnail(SIZE)
+        SIZE = (128, 128)
+        img.thumbnail(SIZE, Image.ANTIALIAS)
         img_byte_arr = io.BytesIO()
         img.save(img_byte_arr, format='jpeg')
         
@@ -60,18 +65,18 @@ def upload(file=None):
 def get(fileid=None):
     
     if fileid is None:  
-        return "NO FILE" 
+        return {400}
     
     file_dr = dr.get(fileid)
     file_db = db.get(fileid)
     
     return Response(stream_with_context(file_dr.iter_chunks(4096)), content_type=file_db.get("mimetype"))
 
-@app.route('/get/<fileid>/thumbnail', methods = ['GET'])
+@app.route('/get/thumbnail/<fileid>', methods = ['GET'])
 def get_thumbnail(fileid=None):
     
     if fileid is None:  
-        return "NO FILE" 
+        return {400}
     
     file_dr = dr.get(f"thumbnail/{fileid}")
     file_db = db.get(fileid)
@@ -85,16 +90,10 @@ def delete(key=None):
         key = request.form.get("delete")
 
     db.delete(key)
-    return redirect("/")
-
-@app.route('/delete_file', methods=["POST"])
-def delete_file(key=None):
-    if key is None:
-        key = request.form.get("delete")
-
-    db.delete(key)
-    db.delete(f"thumbnail/{key}")
-    dr.delete(key)
+    
+    if dr.get(key):
+        dr.delete(key)
+        dr.delete(f"thumbnail/{key}")
     return redirect("/")
  
 # API
