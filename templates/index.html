@@ -2,44 +2,88 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DetaFlow</title>
-
-    <link href="static/css/output.css" rel="stylesheet">
-
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@700&family=JetBrains+Mono:wght@400;700&family=Roboto:wght@100&display=swap" rel="stylesheet">
 </head>
 <body>
     
-    <div class="max-sm:mt-[150px] mt-24 m-4 flex flex-col items-center justify-center">
-        {% for i in items %}
-        <div class="relative border border-slate-600 p-2 m-2 rounded-md w-64">
-            <p class="text-left text-xs h-6">{{i.get('date')}}</p>
-        {% if i.get("isfile") == "false" %}
-            <p>{{i.get('message')}}</p>
-        {% else %}
-            {% if i.get('mimetype') in ['image/jpeg', 'image/png', 'image/webp']  %}
-                <a href="get/{{ i.get('key') }}"><img src="get/thumbnail/{{ i.get('key') }}" alt=""></a>
-            {% else %}
-                <a href="get/{{ i.get('key') }}"> {{i.get('message')}}</a>
-            {% endif %}
-        {% endif %}
-            <form class="absolute -right-3 -top-3" action="/delete" method="POST">
-                <button class="text-xl opacity-80 hover:text-2xl hover:opacity-100 transition-all" name="delete" value={{ i.get('key') }} type="submit">❌</button>
-            </form>
-        </div>
-        {% endfor %}
-    </div>
+    <header class="header__main">
+        <div class="header__content">
+            <div class="header__logo">
+                <span class="iconify header__icon header__logo_icon" data-icon="mdi:clipboard-flow" data-width="72" style="color: var(--color__accent)"></span>
+                <p class="header__logo_name"><span class="header__logo_name_bold">Deta</span>Flow</p>
+            </div>
 
-    <div class="fixed p-2 top-0 text-center w-full backdrop-blur-lg bg-zinc-500 bg-opacity-50">
-        <form action="/new" method="POST">
-            <input type="text" name="message" class="w-80 rounded-xl border mb-1" />
-            <input type="submit" value="➡️" />
-        </form>
-        <form action="/upload" method="POST" enctype=multipart/form-data>
-            <input type=file name=file class="w-80">
-            <input type=submit value="📤">
-        </form>
-    </div>
+            <div class="header__actions">
+                    <button class="header_action header__action_new"><span class="iconify header__icon" data-icon="ep:menu" data-width="72"></span></button>
+                <!-- <div class="header__action_darkmode">
+                    <span class="iconify header__icon" data-icon="line-md:light-dark" data-width="72" id="header__action_darkmode"></span>
+                </div> -->
+            </div>
+        </div>
+    </header>
+
+    <main>
+
+        <div class="main__flex">   
+    
+            <div class="main__content_container">
+    
+                {% for i in items %}
+    
+                    <div class="main__content__card" data-isfile="{{i.get("isfile")}}" data-key="{{i.get("key")}}">
+    
+                        {% if i.get("isfile") == "false" %}
+                            <p class="main__content__card_message">{{i.get('message')}}</p>
+                        {% else %}
+                            {% if i.get('mimetype') in ['image/jpeg', 'image/png', 'image/webp']  %}
+                                <a href="get/{{ i.get('key') }}" class="main__content__card_file"><img src="get/thumbnail_{{ i.get('key') }}" alt="{{i.get('message')}}" loading="lazy"></a>
+                            {% else %}
+                                <a href="get/{{ i.get('key') }}" class="main__content__card_file"> {{i.get('message')}}</a>
+                            {% endif %}
+                        {% endif %}
+                        
+                        <div class="main__content__card_bottom-bar">
+                            <div class="main__content__card_bottom-bar__date">
+                                <p>{{i.get('date')}}</p>
+                            </div>
+                            <div class="main__content__card_bottom-bar__actions">
+                                <!-- <span class="iconify main__content__card_bottom-bar__icon" data-icon="ic:baseline-plus" data-width="48" id="main__content__card_bottom-bar__action_download"></span> -->
+                                <button class="main__content__card_bottom-bar_action bottom_bar__action_delete"><span class="iconify main__content__card_bottom-bar__icon" data-icon="material-symbols:delete-outline" data-width="48" id="main__content__card_bottom-bar__action_delete"></span></button>
+                            </div>
+    
+                        </div>
+                        
+    
+                    </div>
+                    
+                {% endfor %}
+            </div>
+
+            <aside class="main__content__sidebar">
+                <div class="sidebar__action sidebar__action_new-text">
+                    <form action="new" method="post">
+                        <label for="message">New Note:</label>
+                        <textarea name="message" rows="10" cols="50" placeholder="Write something here"></textarea>
+                        <input type="submit">
+                      </form>
+                </div> 
+
+                <div class="sidebar__action sidebar__action_new-file">
+                    <form action="upload" method="POST" enctype=multipart/form-data>
+                        <input type=file name=file>
+                        <input type=submit value="Upload">
+                    </form>
+                </div>
+            </aside>
+            
+        </div>
+    </main>
+    <script type="text/javascript" src="{{url_for('static', filename='script.js')}}"></script>
 </body>
 </html>

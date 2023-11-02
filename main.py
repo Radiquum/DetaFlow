@@ -1,14 +1,11 @@
 from deta import Deta
-from flask import Flask, render_template, request, redirect, stream_with_context, Response
+from flask import Flask, render_template, request, redirect, Response
 from dotenv import load_dotenv
 import os
 from datetime import datetime
 import uuid
 from PIL import Image
-import ssl
 import io
-import asyncio
-from collections import OrderedDict
 from datetime import datetime
 
 load_dotenv()
@@ -50,8 +47,9 @@ def upload(file=None):
     if file.mimetype in ['image/jpeg', 'image/png', 'image/webp']:
         
         img = Image.open(file.stream)
-        SIZE = (128, 128)
-        img.thumbnail(SIZE, Image.ANTIALIAS)
+        img = img.convert('RGB')
+        SIZE = [256, 256]
+        img.thumbnail(SIZE, Image.LANCZOS)
         img_byte_arr = io.BytesIO()
         img.save(img_byte_arr, format='jpeg')
         
@@ -62,39 +60,20 @@ def upload(file=None):
 
 
 @app.route('/get/<fileid>', methods = ['GET'])
-def get(fileid=None):
-    
+async def get(fileid=None):    
     if fileid is None:  
         return {400}
     
-    file_dr = dr.get(fileid)
+    path = ''
+    if fileid[:10:] == 'thumbnail_':
+        path = 'thumbnail/'
+        fileid = fileid.strip('thumbnail_')
+    
     file_db = db.get(fileid)
+    file_dr = dr.get(f"{path}{fileid}")
     
-    return Response(stream_with_context(file_dr.iter_chunks(4096)), content_type=file_db.get("mimetype"))
-
-@app.route('/get/thumbnail/<fileid>', methods = ['GET'])
-def get_thumbnail(fileid=None):
-    
-    if fileid is None:  
-        return {400}
-    
-    file_dr = dr.get(f"thumbnail/{fileid}")
-    file_db = db.get(fileid)
-    
-    return Response(stream_with_context(file_dr.iter_chunks(4096)), content_type=file_db.get("mimetype"))
-    
-
-@app.route('/delete', methods=["POST"])
-def delete(key=None):
-    if key is None:
-        key = request.form.get("delete")
-
-    db.delete(key)
-    
-    if dr.get(key):
-        dr.delete(key)
-        dr.delete(f"thumbnail/{key}")
-    return redirect("/")
+    #return Response(file_dr.read(), mimetype=file_db.get("mimetype"), headers={"Cache-Control": "public, max-age=86400"})
+    return Response(file_dr.iter_chunks(4096), mimetype=file_db.get("mimetype"), content_type=file_db.get("mimetype"),  headers={"Cache-Control": "public, max-age=86400", "Content-Disposition": f"filename={file_db.get('message')}"})
  
 # API
 
@@ -110,12 +89,18 @@ def api_text_new(message=None):
     db.put({"key": str(uuid.uuid4()), "date": datetime.now().strftime("%d %B %Y @ %H:%M:%S"), "message": message})
     return {"status": "OK"}
 
-@app.route('/api/delete', methods=["POST"])
+@app.route('/api/delete', methods=["POST", "DELETE"])
 def api_delete(key=None):
+    
+    req = request.get_json()
+    key: str = req['key']
     if key is None:
         return {"status": "NO KEY"}
 
     db.delete(key)
+    if dr.get(key):
+        dr.delete(key)
+        dr.delete(f"thumbnail/{key}")
     return {"status": "OK"}
 
 @app.route('/api/fetch', methods=["GET"])
